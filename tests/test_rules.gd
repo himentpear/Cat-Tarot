@@ -240,6 +240,14 @@ func test_emperor_intercept() -> bool:
 	check_eq(gm.phase, P_SELECT, "reversed Emperor prevents death")
 	check_eq(int(gm.stats["passion"]), 1, "reversed Emperor clamps")
 	check_eq(int(gm.stats["intuition"]), 4, "reversed Emperor intuition -1 after Magician +1")
+	fresh()
+	gm.debug_set_stats(4, 8, 4, 4)
+	gm.debug_grant_mark(4, "reversed")
+	set_field([0], "REVERSED")
+	select_slot(0)
+	gm.debug_refuse()
+	check_eq(gm.phase, P_SELECT, "reversed Emperor saves intuition at the upper limit")
+	check_eq(int(gm.stats["intuition"]), 8, "intuition clamps to 9 before paying the Emperor penalty")
 	return true
 
 

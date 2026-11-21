@@ -1,0 +1,151 @@
+[gd_resource type="Theme" format=3 uid="uid://cn06run67uqoy"]
+
+[sub_resource type="StyleBoxFlat" id="Focus"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.957, 0.839, 0.604, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="BackHot"]
+content_margin_left = 16.0
+content_margin_top = 5.0
+content_margin_right = 16.0
+content_margin_bottom = 5.0
+bg_color = Color(0.357, 0.255, 0.188, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.847, 0.694, 0.486, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="Back"]
+content_margin_left = 16.0
+content_margin_top = 5.0
+content_margin_right = 16.0
+content_margin_bottom = 5.0
+bg_color = Color(0.259, 0.188, 0.169, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.6, 0.475, 0.318, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="StyleBoxFlat" id="BackPressed"]
+content_margin_left = 16.0
+content_margin_top = 5.0
+content_margin_right = 16.0
+content_margin_bottom = 5.0
+bg_color = Color(0.188, 0.137, 0.129, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.706, 0.549, 0.341, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[sub_resource type="Gradient" id="HandleGradient"]
+offsets = PackedFloat32Array(0, 0.51, 0.66, 0.74, 0.88, 1)
+colors = PackedColorArray(1, 0.91, 0.655, 1, 0.855, 0.714, 0.471, 1, 0.6, 0.447, 0.31, 1, 0.318, 0.22, 0.173, 1, 0.906, 0.792, 0.553, 1, 0.906, 0.792, 0.553, 0)
+
+[sub_resource type="GradientTexture2D" id="Handle"]
+gradient = SubResource("HandleGradient")
+width = 20
+height = 20
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.98, 0.5)
+
+[sub_resource type="Gradient" id="LitHandleGradient"]
+offsets = PackedFloat32Array(0, 0.51, 0.66, 0.74, 0.88, 1)
+colors = PackedColorArray(1, 0.953, 0.796, 1, 1, 0.855, 0.569, 1, 0.745, 0.537, 0.286, 1, 0.471, 0.322, 0.204, 1, 1, 0.949, 0.722, 1, 1, 0.949, 0.722, 0)
+
+[sub_resource type="GradientTexture2D" id="LitHandle"]
+gradient = SubResource("LitHandleGradient")
+width = 20
+height = 20
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.98, 0.5)
+
+[sub_resource type="StyleBoxFlat" id="Filled"]
+content_margin_left = 2.0
+content_margin_top = 3.0
+content_margin_right = 2.0
+content_margin_bottom = 3.0
+bg_color = Color(0.729, 0.549, 0.314, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.816, 0.651, 0.42, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="FilledHot"]
+content_margin_left = 2.0
+content_margin_top = 3.0
+content_margin_right = 2.0
+content_margin_bottom = 3.0
+bg_color = Color(0.894, 0.741, 0.471, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.957, 0.839, 0.604, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="Track"]
+content_margin_left = 2.0
+content_margin_top = 3.0
+content_margin_right = 2.0
+content_margin_bottom = 3.0
+bg_color = Color(0.22, 0.169, 0.169, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.471, 0.365, 0.271, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[resource]
+Button/colors/font_color = Color(0.925, 0.839, 0.675, 1)
+Button/colors/font_hover_color = Color(1, 0.949, 0.824, 1)
+Button/colors/font_pressed_color = Color(1, 0.839, 0.604, 1)
+Button/styles/focus = SubResource("Focus")
+Button/styles/hover = SubResource("BackHot")
+Button/styles/normal = SubResource("Back")
+Button/styles/pressed = SubResource("BackPressed")
+HSlider/icons/grabber = SubResource("Handle")
+HSlider/icons/grabber_highlight = SubResource("LitHandle")
+HSlider/styles/grabber_area = SubResource("Filled")
+HSlider/styles/grabber_area_highlight = SubResource("FilledHot")
+HSlider/styles/slider = SubResource("Track")

@@ -6,6 +6,24 @@ var language: String = "zh"
 
 const TEXTS := {
 	"zh": {
+		"theatre.gallery": "剧团图鉴",
+		"theatre.start": "开始演出",
+		"theatre.continue": "继续剧目",
+		"theatre.settings": "剧场设置",
+		"theatre.agent_console": "Agent 控制台",
+		"theatre.ask_question": "你想问塔罗什么？",
+		"theatre.quit": "离开剧场",
+		"theatre.no_run": "暂无可继续的剧目",
+		"theatre.back": "返回",
+		"theatre.quit_prompt": "现在离开剧场？",
+		"theatre.overwrite_prompt": "开始新的演出并替换当前进度？",
+		"theatre.prev": "上一张",
+		"theatre.next": "下一张",
+		"theatre.unseen": "尚未亮相",
+		"theatre.discover": "这张牌首次登台后，会收录在这里。",
+		"theatre.collected": "已收录",
+		"theatre.music": "音乐",
+		"theatre.sfx": "音效",
 		"res.hp": "生命",
 		"stat.passion": "热情",
 		"stat.intuition": "直觉",
@@ -241,6 +259,24 @@ const TEXTS := {
 		"reason.final_cant_pay": "你无法支付最终试炼的代价。",
 	},
 	"en": {
+		"theatre.gallery": "Company gallery",
+		"theatre.start": "Start play",
+		"theatre.continue": "Continue the play",
+		"theatre.settings": "Theatre settings",
+		"theatre.agent_console": "Agent console",
+		"theatre.ask_question": "What would you like to ask the cards?",
+		"theatre.quit": "Leave theatre",
+		"theatre.no_run": "No performance to continue",
+		"theatre.back": "Back",
+		"theatre.quit_prompt": "Leave the theatre?",
+		"theatre.overwrite_prompt": "Start a new play and replace the current one?",
+		"theatre.prev": "Previous",
+		"theatre.next": "Next",
+		"theatre.unseen": "Unseen card",
+		"theatre.discover": "This card joins the gallery when it first appears on stage.",
+		"theatre.collected": "Collected",
+		"theatre.music": "Music",
+		"theatre.sfx": "Sound",
 		"res.hp": "HP",
 		"stat.passion": "Passion",
 		"stat.intuition": "Intuition",
@@ -514,7 +550,16 @@ func card_desc(card_id: int) -> String:
 	var card := CardDatabase.get_card(card_id)
 	if card.is_empty():
 		return ""
-	return str(card.get("desc_" + language, card.get("desc_en", "")))
+	var description := str(card.get("desc_" + language, card.get("desc_en", "")))
+	if not description.is_empty():
+		return description
+	var entries: PackedStringArray = []
+	for orientation: String in ["upright", "reversed"]:
+		var data := CardDatabase.orientation_data(card_id, orientation)
+		var text := str(data.get("mark_text_" + language, data.get("mark_text_en", "")))
+		if not text.is_empty():
+			entries.append("%s\n%s" % [orientation_name(orientation), text])
+	return "\n\n".join(entries)
 
 
 func stat_name(stat: String) -> String:

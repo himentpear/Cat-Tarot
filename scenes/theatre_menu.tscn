@@ -1,0 +1,20 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/theatre_menu.gd" id="Menu"]
+[ext_resource type="PackedScene" path="res://scenes/cat_placeholder.tscn" id="Cat"]
+[ext_resource type="Script" path="res://scripts/theatre_set.gd" id="Set"]
+
+[node name="TheatreMenu" type="Node3D"]
+script = ExtResource("Menu")
+
+[node name="Set" type="Node3D" parent="."]
+script = ExtResource("Set")
+cat_scene = ExtResource("Cat")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+current = true
+fov = 31.1
+near = 0.08
+
+[node name="Interface" type="CanvasLayer" parent="."]
+

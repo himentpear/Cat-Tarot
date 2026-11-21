@@ -1,109 +1,38 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://scripts/ui_manager.gd" id="2_ui"]
-[ext_resource type="PackedScene" path="res://scenes/dice_3d.tscn" id="3_dice"]
-[ext_resource type="PackedScene" path="res://scenes/deck_3d.tscn" id="4_deck"]
-[ext_resource type="PackedScene" path="res://scenes/restart_button_3d.tscn" id="5_restart"]
-
-[sub_resource type="ProceduralSkyMaterial" id="SkyMat_main"]
-sky_top_color = Color(0.52, 0.74, 0.91, 1)
-sky_horizon_color = Color(1, 0.87, 0.72, 1)
-sky_curve = 0.18
-sky_energy_multiplier = 1.0
-ground_bottom_color = Color(0.78, 0.6, 0.47, 1)
-ground_horizon_color = Color(1, 0.87, 0.72, 1)
-ground_curve = 0.1
-sun_angle_max = 18.0
-
-[sub_resource type="Sky" id="Sky_main"]
-sky_material = SubResource("SkyMat_main")
-
-[sub_resource type="Environment" id="Environment_main"]
-background_mode = 2
-sky = SubResource("Sky_main")
-ambient_light_source = 2
-ambient_light_color = Color(1, 0.95, 0.88, 1)
-ambient_light_energy = 0.3
-tonemap_mode = 2
-tonemap_exposure = 0.78
-
-[sub_resource type="StandardMaterial3D" id="Mat_wood"]
-albedo_color = Color(0.28, 0.2, 0.15, 1)
-roughness = 0.82
-
-[sub_resource type="StandardMaterial3D" id="Mat_cloth"]
-albedo_color = Color(0.45, 0.38, 0.32, 1)
-roughness = 1.0
-
-[sub_resource type="CylinderMesh" id="Mesh_wood"]
-material = SubResource("Mat_wood")
-top_radius = 8.0
-bottom_radius = 8.0
-height = 0.35
-radial_segments = 64
-
-[sub_resource type="CylinderMesh" id="Mesh_cloth"]
-material = SubResource("Mat_cloth")
-top_radius = 7.6
-bottom_radius = 7.6
-height = 0.04
-radial_segments = 64
-
-[sub_resource type="StandardMaterial3D" id="Mat_playmat"]
-albedo_color = Color(0.65, 0.57, 0.48, 1)
-roughness = 0.95
-
-[sub_resource type="CylinderMesh" id="Mesh_playmat"]
-material = SubResource("Mat_playmat")
-top_radius = 5.2
-bottom_radius = 5.2
-height = 0.008
-radial_segments = 96
+[ext_resource type="Script" path="res://scripts/theatre_set.gd" id="3_theatre_set"]
+[ext_resource type="PackedScene" path="res://scenes/cat_placeholder.tscn" id="4_cat"]
+[ext_resource type="PackedScene" path="res://scenes/dice_3d.tscn" id="5_dice"]
+[ext_resource type="PackedScene" path="res://scenes/deck_3d.tscn" id="6_deck"]
+[ext_resource type="PackedScene" path="res://scenes/restart_button_3d.tscn" id="7_restart"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("1_main")
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment_main")
+[node name="TheatreSet" type="Node3D" parent="."]
+script = ExtResource("3_theatre_set")
+cat_scene = ExtResource("4_cat")
+build_menu_props = true
+build_menu_hitboxes = false
 
 [node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8, 5)
+transform = Transform3D(1, 0, 0, 0, 0.619045, 0.785356, 0, -0.785356, 0.619045, 0, 8.8, 8.6)
 current = true
-fov = 35.0
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-light_color = Color(1, 0.97, 0.92, 1)
-light_energy = 0.4
-shadow_enabled = true
-
-[node name="KeyLight" type="OmniLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 4)
-light_color = Color(1, 0.9, 0.82, 1)
-light_energy = 0.25
-omni_range = 16.0
-
-[node name="TableWood" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.18, 0)
-mesh = SubResource("Mesh_wood")
-
-[node name="TableCloth" type="MeshInstance3D" parent="."]
-mesh = SubResource("Mesh_cloth")
-
-[node name="PlayMat" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.024, 0)
-mesh = SubResource("Mesh_playmat")
+fov = 41.0
 
 [node name="CardRoot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2.25)
 
-[node name="Dice3D" parent="." instance=ExtResource("3_dice")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.8, 0.375, 2.4)
+[node name="Dice3D" parent="." instance=ExtResource("5_dice")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.8, 0.375, 4.65)
 
-[node name="Deck3D" parent="." instance=ExtResource("4_deck")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.1, 0.03, 0.9)
+[node name="Deck3D" parent="." instance=ExtResource("6_deck")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.95, 0.025, 2.85)
 
-[node name="RestartButton3D" parent="." instance=ExtResource("5_restart")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.4, 0.03, -1.25)
+[node name="RestartButton3D" parent="." instance=ExtResource("7_restart")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.05, 0.025, 1.15)
 
 [node name="UI" type="CanvasLayer" parent="."]
 script = ExtResource("2_ui")
