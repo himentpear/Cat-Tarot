@@ -11,6 +11,7 @@ const SFX_FILES := {
 	"card_reveal": "card_reveal.wav",
 	"card_fan_open": "card_fan_open.wav",
 	"dice_roll": "dice_roll.wav",
+	"theatre_bell": "theatre_bell.wav",
 }
 const SFX_VOICES := 12
 const MUSIC_BUS_DB := -13.0

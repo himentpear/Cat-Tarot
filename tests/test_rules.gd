@@ -240,6 +240,14 @@ func test_emperor_intercept() -> bool:
 	check_eq(gm.phase, P_SELECT, "reversed Emperor prevents death")
 	check_eq(int(gm.stats["passion"]), 1, "reversed Emperor clamps")
 	check_eq(int(gm.stats["intuition"]), 4, "reversed Emperor intuition -1 after Magician +1")
+	fresh()
+	gm.debug_set_stats(4, 8, 4, 4)
+	gm.debug_grant_mark(4, "reversed")
+	set_field([0], "REVERSED")
+	select_slot(0)
+	gm.debug_refuse()
+	check_eq(gm.phase, P_SELECT, "reversed Emperor saves intuition at the upper limit")
+	check_eq(int(gm.stats["intuition"]), 8, "intuition clamps to 9 before paying the Emperor penalty")
 	return true
 
 
@@ -350,14 +358,14 @@ func test_upper_death() -> bool:
 func test_roll_cost_tradeoff() -> bool:
 	fresh()
 	gm.debug_set_roll_cost(true)
-	var cost: Dictionary = gm.get_die_cost(3)
-	check_eq(str(cost["plus"]), "curiosity", "die 3 raises curiosity")
-	check_eq(str(cost["minus"]), "comfort", "die 3 lowers comfort")
+	var cost: Dictionary = gm.get_die_cost(1)
+	check_eq(str(cost["plus"]), "passion", "die 1 raises passion")
+	check_eq(str(cost["minus"]), "intuition", "die 1 lowers intuition")
 	roll(3)
-	check_eq(int(gm.stats["curiosity"]), 5, "die 3 curiosity +1")
-	check_eq(int(gm.stats["comfort"]), 3, "die 3 comfort -1")
-	check_eq(int(gm.stats["passion"]), 4, "die 3 leaves passion")
-	check_eq(int(gm.stats["intuition"]), 4, "die 3 leaves intuition")
+	check_eq(int(gm.stats["passion"]), 5, "roll pays the displayed face 1 passion +1")
+	check_eq(int(gm.stats["intuition"]), 3, "roll pays the displayed face 1 intuition -1")
+	check_eq(int(gm.stats["curiosity"]), 4, "roll leaves curiosity")
+	check_eq(int(gm.stats["comfort"]), 4, "roll leaves comfort")
 	check_eq(int(gm.die_value), 3, "roll still sets the die")
 	check_eq(gm.phase, P_SELECT, "roll cost does not end a safe run")
 	return true

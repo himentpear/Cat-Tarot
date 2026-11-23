@@ -6,7 +6,8 @@
 
 - [ ] PR title uses Conventional Commits (`feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert`)
 - [ ] If `assets/` changed: ran `tools/pack-assets.sh`, then `tools/push-assets.sh`, and committed the updated `assets.sha256`
-- [ ] `python tools/assets.py check` passes locally (or `tools/check-assets` on Windows)
+- [ ] If opened from a fork without write access: published the bundle to **your fork's** Release tagged `assets` and linked it in the Summary (the maintainer re-publishes it to this repo's Release)
+- [ ] `tools/check-assets.sh` passes locally (`tools\check-assets.ps1` on Windows)
 - [ ] `assets.sha256` is committed; `assets/`, `assets.tar.gz`, `assets.zip` are **not** committed
 - [ ] GDScript is formatted (`gdformat scripts tests`) and `gdlint scripts tests` is clean
 - [ ] README keeps the fixed H2 structure and documents asset download / extract / install

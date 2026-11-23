@@ -1,17 +1,27 @@
 ; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
 config_version=5
 
 [application]
 
 config/name="Cat-Tarot"
 run/main_scene="res://scenes/main.tscn"
-config/features=PackedStringArray("4.6")
+config/features=PackedStringArray("4.7")
 
 [autoload]
 
 Audio="*res://scripts/audio_manager.gd"
 Loc="*res://scripts/loc.gd"
 GameManager="*res://scripts/game_manager.gd"
+TheatreSession="*res://scripts/theatre_session.gd"
+TablePreloader="*res://scripts/table_preloader.gd"
+AgentSettings="*res://scripts/agent_settings.gd"
 
 [display]
 
@@ -21,4 +31,5 @@ window/stretch/mode="canvas_items"
 
 [rendering]
 
+anti_aliasing/quality/msaa_3d=1
 environment/defaults/default_clear_color=Color(0.04, 0.03, 0.07, 1)

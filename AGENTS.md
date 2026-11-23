@@ -5,7 +5,7 @@ working on a fork or opening a PR (including with an AI agent), follow it exactl
 
 ## Project facts
 
-- **Engine:** Godot **4.6**, GDScript with static typing. Project file: `project.godot`.
+- **Engine:** Godot **4.7**, GDScript with static typing. Project file: `project.godot`.
 - **File names:** `snake_case`. One scene per purpose under `scenes/`, scripts under `scripts/`,
   tests under `tests/`.
 - **Assets are not in Git.** `assets/`, `assets.tar.gz` and `assets.zip` are git-ignored; only
@@ -13,6 +13,9 @@ working on a fork or opening a PR (including with an AI agent), follow it exactl
 - **Asset bundles live on this repo's GitHub Release tagged `assets`** as two equivalent files:
   `assets.tar.gz` (macOS/Linux) and `assets.zip` (Windows).
 - **No Git LFS, ever.** LFS quota is shared by every game repo in the account.
+- **License:** `LICENSE` at the repo root covers the code (MIT by default — fill in the copyright
+  line). Third-party asset terms live in `assets/LICENSES.md` (inside the bundle) and in
+  `docs/CREDITS.md`.
 
 ## Read the README first
 
@@ -25,29 +28,43 @@ structure and keep **gameplay out of it** — rules, controls, walkthroughs and 
 
 ## Assets: download them first (after clone)
 
-`assets/` is **not** in Git. Restore it before running the project, tests or the editor:
+`assets/` is **not** in Git. Restore it, then import once before running the project, tests or the
+editor:
 
 ```bash
 tools/fetch-assets.sh                        # Linux / macOS / Git Bash
 powershell -File tools\fetch-assets.ps1      # Windows PowerShell
+godot --headless --path . --import           # rebuild .import sidecars + .godot/ cache
 ```
 
 The script uses a local `assets.tar.gz` / `assets.zip` if present, otherwise downloads the two
 archives from this repo's GitHub **Release tagged `assets`**, extracts to `assets/`, and verifies
 the committed `assets.sha256`. Requires Python 3.8+; `gh` only if the release is private.
 
-Manual alternative - download from the `assets` release and extract at the repo root:
+The bundle ships raw files only - `.import` sidecars and the `.godot/` cache are per-machine,
+git-ignored, and regenerated on import. If you pulled new code that adds a `class_name` and see
+`Identifier "..." not declared` or `No loader found for resource ...`, clear the stale cache and
+re-import:
+
+```bash
+rm -rf .godot && godot --headless --path . --import
+```
+
+Manual alternative - download the archive from the `assets` release into the repo root and run
+`tools/fetch-assets.sh` (it uses the local bundle, extracts it, and verifies the stamp). If you
+extract by hand anyway, verify with `tools/check-assets.sh`:
 
 ```bash
 tar -xzf assets.tar.gz                          # macOS / Linux
 Expand-Archive assets.zip -DestinationPath .    # Windows PowerShell
+tools/check-assets.sh                           # verify assets/ matches assets.sha256
 ```
 
 If the repo has no GitHub remote yet, only a local bundle can be used - never delete `assets/`.
 
 ## Assets: change or add them (how to contribute)
 
-Prerequisites: Python 3.8+; `gh` authenticated and a GitHub `origin` remote to publish.
+Prerequisites: Python 3.8+; `gh` authenticated; a GitHub remote to publish to.
 
 1. Edit or add files under `assets/` (keep third-party terms in `assets/LICENSES.md`).
 2. Rebuild both archives and the stamp:
@@ -58,13 +75,15 @@ Prerequisites: Python 3.8+; `gh` authenticated and a GitHub `origin` remote to p
    ```
 
    This writes `assets.tar.gz`, `assets.zip` and the new `assets.sha256`.
-3. Publish both archives to the `assets` Release (same tag, `--clobber`):
+3. Publish both archives to a GitHub Release tagged `assets` (same tag, `--clobber`):
 
    ```bash
    tools/push-assets.sh
    powershell -File tools\push-assets.ps1
    ```
 
+   `tools/assets.py push` reads the `origin` remote, so it publishes to whichever repo `origin`
+   points at.
 4. Commit **only** the stamp, with a complete Conventional Commit (body + sign-off, see below):
 
    ```bash
@@ -72,7 +91,43 @@ Prerequisites: Python 3.8+; `gh` authenticated and a GitHub `origin` remote to p
    git commit    # message: chore(assets): update bundle  + body + Signed-off-by
    ```
 
-5. Verify: `python tools/assets.py check` must pass.
+5. Verify: `tools/check-assets.sh` must pass.
+
+### Contributor with write access (maintainer, or a branch in the repo)
+
+Step 3 above publishes straight to the upstream repo's `assets` Release. Nothing more to do.
+
+### Contributor opening a PR from a fork (the normal case for agents)
+
+You cannot publish to the upstream repo's Release (no write access). Instead:
+
+1. Keep `origin` pointing at **your fork** (the fork default), then run `tools/push-assets.sh` — it
+   publishes both bundles to **your fork's** Release tagged `assets`.
+2. Commit **only** `assets.sha256`, open the PR, and **state in the PR body which fork + Release
+   holds the bundle**, e.g. `bundle: https://github.com/<you>/<repo>/releases/tag/assets`.
+3. Never bump `assets.sha256` without publishing the bundle somewhere the maintainer can fetch. A
+   PR whose stamp has no matching bundle is **unmergeable**: the maintainer cannot verify the hash
+   or rebuild the game.
+
+### Merging a PR that changed assets (maintainer)
+
+1. Check out the PR branch (so `assets.sha256` is the PR's new stamp), then download the
+   contributor's bundle from their fork Release and let `fetch` verify it:
+
+   ```bash
+   git fetch origin pull/<N>/head:pr-<N>
+   git checkout pr-<N>
+   gh release download assets -R <fork-owner>/<repo> -p 'assets.tar.gz' --clobber -D .
+   tools/fetch-assets.sh    # uses the local bundle, extracts it, verifies against pr-<N>'s stamp
+   ```
+
+2. Publish to the **upstream** `assets` Release (you have write access):
+
+   ```bash
+   tools/push-assets.sh
+   ```
+
+3. Run the tests, then merge.
 
 Hard rules:
 

@@ -1,9 +1,11 @@
 extends Node
 
 signal state_changed
+signal checkpoint_reached
 signal field_cards_changed(cards: Array)
 signal selected_card_changed(card_id: int, slot: int)
 signal choice_committed(accepted: bool, card_id: int, slot: int)
+signal turn_resolved(result: Dictionary)
 signal orientation_rolled(value: int)
 signal marks_changed(marks: Array)
 signal game_over(reason_key: String)
@@ -13,11 +15,18 @@ signal choice_requested(kind: String, prompt_key: String, data: Dictionary)
 enum Phase { SETUP, SELECT, RESOLVE, FINAL, GAME_OVER }
 
 const TOTAL_CARDS := 21
+const STORY_CHOICES := 5
 const MAX_MARKS := 5
 const WORLD_ID := 21
 const STAT_KEYS: Array[String] = ["passion", "intuition", "curiosity", "comfort"]
 const ORIENT_UPRIGHT := "UPRIGHT"
 const ORIENT_REVERSED := "REVERSED"
+const CHECKPOINT_FIELDS := [
+	"stats", "die_value", "deck", "field_cards", "selected_slot", "selected_card",
+	"marks", "choices_completed", "choice_limit", "refusals_total", "phase", "pending_new_mark",
+	"effect_queue", "flow", "flow_new_mark_card", "roll_cost_enabled", "rng_seed",
+	"revision", "game_over_won", "game_over_reason_key", "_pending_resolution",
+]
 const DIE_COSTS := {
 	1: {"plus": "passion", "minus": "intuition"},
 	2: {"plus": "intuition", "minus": "passion"},
@@ -35,6 +44,7 @@ var selected_slot: int = -1
 var selected_card: int = -1
 var marks: Array[Dictionary] = []
 var choices_completed: int = 0
+var choice_limit: int = TOTAL_CARDS
 var refusals_total: int = 0
 var phase: Phase = Phase.SETUP
 var pending_new_mark: Dictionary = {}
@@ -48,9 +58,14 @@ var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var rng_seed: int = 0
 var debug_forced_rolls: Array[int] = []
 var _checking_once: bool = false
+var revision: int = 0
+var _pending_resolution: Dictionary = {}
+var _publishing_resolution: bool = false
 
 
-func new_game(seed_value: int = 0) -> void:
+func new_game(seed_value: int = 0, five_act_story: bool = false) -> void:
+	if _publishing_resolution or (phase == Phase.RESOLVE and not _pending_resolution.is_empty() and pending_new_mark.is_empty()):
+		return
 	rng = RandomNumberGenerator.new()
 	if seed_value == 0:
 		rng.randomize()
@@ -73,6 +88,7 @@ func new_game(seed_value: int = 0) -> void:
 	selected_card = -1
 	marks.clear()
 	choices_completed = 0
+	choice_limit = STORY_CHOICES if five_act_story else TOTAL_CARDS
 	refusals_total = 0
 	phase = Phase.SELECT
 	pending_new_mark.clear()
@@ -81,6 +97,8 @@ func new_game(seed_value: int = 0) -> void:
 	flow_new_mark_card = -1
 	game_over_won = false
 	game_over_reason_key = ""
+	revision = 0
+	_pending_resolution = {}
 	roll_cost_enabled = true
 	debug_forced_rolls.clear()
 	_log("=== Cat-Tarot === " + Loc.t("log.seed") + " " + str(rng_seed))
@@ -89,6 +107,7 @@ func new_game(seed_value: int = 0) -> void:
 	game_started.emit(rng_seed)
 	field_cards_changed.emit(field_cards.duplicate())
 	_emit_state()
+	checkpoint_reached.emit()
 
 
 func _make_runtime(card_id: int) -> Dictionary:
@@ -157,7 +176,7 @@ func get_selected_orientation_data() -> Dictionary:
 
 
 func select_card(card_id: int) -> void:
-	if phase != Phase.SELECT:
+	if phase != Phase.SELECT or _publishing_resolution:
 		return
 	var slot := -1
 	for i in field_cards.size():
@@ -172,6 +191,7 @@ func select_card(card_id: int) -> void:
 	_log(Loc.tf("log.select", [Loc.card_name(card_id)]))
 	selected_card_changed.emit(card_id, slot)
 	_emit_state()
+	checkpoint_reached.emit()
 
 
 func select_slot(slot: int) -> void:
@@ -184,28 +204,31 @@ func select_slot(slot: int) -> void:
 
 
 func roll_die() -> void:
-	if phase != Phase.SELECT:
+	if phase != Phase.SELECT or _publishing_resolution:
 		return
+	_begin_resolution("roll", {})
 	die_value = _roll_d6()
 	_apply_die_to_field()
 	_log(Loc.tf("log.die", [die_value]))
 	orientation_rolled.emit(die_value)
 	field_cards_changed.emit(field_cards.duplicate())
 	if roll_cost_enabled:
-		var cost := get_die_cost(die_value)
+		var cost := get_die_cost(cost_value)
 		if _apply_stat_delta(str(cost["plus"]), 1, "roll"):
 			return
 		if _apply_stat_delta(str(cost["minus"]), -1, "roll"):
 			return
-	_emit_state()
+	phase = Phase.SELECT
+	_publish_resolution()
 
 
 func accept_selected() -> void:
-	if phase != Phase.SELECT or selected_slot < 0:
+	if phase != Phase.SELECT or _publishing_resolution or selected_slot < 0:
 		return
 	var runtime := get_selected_runtime()
 	if runtime.is_empty():
 		return
+	_begin_resolution("accept", runtime)
 	flow = "accept"
 	flow_new_mark_card = -1
 	choices_completed += 1
@@ -220,8 +243,8 @@ func accept_selected() -> void:
 	if marks.size() >= MAX_MARKS:
 		pending_new_mark = {"card_id": int(runtime["card_id"]), "orientation": str(runtime["orientation"])}
 		marks_changed.emit(marks.duplicate())
-		phase = Phase.RESOLVE
 		_emit_state()
+		checkpoint_reached.emit()
 		return
 	_add_mark(int(runtime["card_id"]), str(runtime["orientation"]))
 	_flow_new_mark_added(int(runtime["card_id"]))
@@ -229,11 +252,12 @@ func accept_selected() -> void:
 
 
 func refuse_selected() -> void:
-	if phase != Phase.SELECT or selected_slot < 0:
+	if phase != Phase.SELECT or _publishing_resolution or selected_slot < 0:
 		return
 	var runtime := get_selected_runtime()
 	if runtime.is_empty():
 		return
+	_begin_resolution("refuse", runtime)
 	flow = "refuse"
 	flow_new_mark_card = -1
 	choices_completed += 1
@@ -266,20 +290,18 @@ func _flow_new_mark_added(card_id: int) -> void:
 
 
 func replace_mark(old_card_id: int) -> void:
-	if pending_new_mark.is_empty():
+	if phase != Phase.RESOLVE or pending_new_mark.is_empty():
+		return
+	var old_index := _mark_index(old_card_id)
+	if old_index < 0:
 		return
 	var new_card_id := int(pending_new_mark["card_id"])
 	var new_orientation := str(pending_new_mark["orientation"])
 	pending_new_mark.clear()
-	var old_index := -1
-	for i in marks.size():
-		if int(marks[i]["card_id"]) == old_card_id:
-			old_index = i
-			break
-	if old_index >= 0:
-		marks.remove_at(old_index)
-		for i in marks.size():
-			marks[i]["order"] = i
+	_pending_resolution["replaced_mark"] = old_card_id
+	marks.remove_at(old_index)
+	for i in range(old_index, marks.size()):
+		marks[i]["order"] = i
 	_add_mark(new_card_id, new_orientation)
 	_flow_new_mark_added(new_card_id)
 	phase = Phase.RESOLVE
@@ -378,6 +400,8 @@ func _trigger_effect(job: Dictionary) -> String:
 		if condition != null and not _condition_met(condition):
 			continue
 		var actions: Array = rule.get("actions", [])
+		if not applied and not actions.is_empty():
+			_record_effect(card_id, str(effect["timing"]))
 		for action in actions:
 			var result := _apply_action(action, card_id, effect_index, mark_index)
 			if result == "death":
@@ -522,6 +546,7 @@ func _apply_stat_delta(stat: String, delta: int, source: String, floor_value = n
 		return false
 	var old_value := int(stats[stat])
 	var raw := old_value + delta
+	var emperor_penalty := false
 	var has_bound := floor_value != null or cap_value != null
 	if floor_value != null:
 		raw = maxi(raw, int(floor_value))
@@ -538,19 +563,20 @@ func _apply_stat_delta(stat: String, delta: int, source: String, floor_value = n
 				emperor["uses"] = emperor_uses
 				marks[emperor_index] = emperor
 				marks_changed.emit(marks.duplicate())
+				_record_effect(4, "emperor")
 				_log(Loc.tf("log.emperor_save", [stat, raw]))
-				if str(emperor["orientation"]).to_upper() == ORIENT_REVERSED:
-					var death := _apply_stat_delta("intuition", -1, "emperor_reverse")
-					if death:
-						return true
-					raw = int(stats[stat])
+				emperor_penalty = str(emperor["orientation"]).to_upper() == ORIENT_REVERSED
 	stats[stat] = raw
 	if old_value != raw:
+		if not _pending_resolution.is_empty():
+			_pending_resolution["stat_changes"].append({"stat": stat, "before": old_value, "after": raw, "source": source})
 		var delta_text := ("+%d" % delta) if delta > 0 else str(delta)
 		_log(Loc.tf("log.stat_change", [Loc.stat_name(stat), delta_text, raw]))
 	_emit_state()
 	if _check_any_death():
 		return true
+	if emperor_penalty:
+		return _apply_stat_delta("intuition", -1, "emperor_reverse")
 	_check_once_per_run()
 	return phase == Phase.GAME_OVER
 
@@ -596,6 +622,7 @@ func _check_once_per_run() -> void:
 				marks_changed.emit(marks.duplicate())
 			if not applies:
 				continue
+			_record_effect(card_id, "once_per_run")
 			for rule in rules:
 				var condition = rule.get("condition", null)
 				if condition != null and not _condition_met(condition):
@@ -617,21 +644,21 @@ func _start_death() -> void:
 		return
 	effect_queue.clear()
 	pending_new_mark.clear()
+	flow = ""
 	flow_new_mark_card = -1
 	game_over_won = false
 	game_over_reason_key = "reason.death"
 	phase = Phase.GAME_OVER
 	_log(Loc.t("log.death_end"))
-	game_over.emit(game_over_reason_key)
-	_emit_state()
-
-
+	_publish_resolution()
 
 func _finish_choice_resolution() -> void:
 	if phase == Phase.GAME_OVER:
 		return
-	# Remove the resolved card and refill from the deck.
-	if selected_slot >= 0 and selected_slot < field_cards.size():
+	# Resolve the final choice without drawing another candidate.
+	if choices_completed >= choice_limit:
+		field_cards = [null, null, null]
+	elif selected_slot >= 0 and selected_slot < field_cards.size():
 		field_cards[selected_slot] = null
 		if not deck.is_empty():
 			field_cards[selected_slot] = _make_runtime(deck.pop_front())
@@ -641,11 +668,11 @@ func _finish_choice_resolution() -> void:
 	flow = ""
 	flow_new_mark_card = -1
 	effect_queue.clear()
-	if choices_completed >= TOTAL_CARDS:
+	if choices_completed >= choice_limit:
 		_enter_final_end()
 		return
 	phase = Phase.SELECT
-	_emit_state()
+	_publish_resolution()
 
 
 func _enter_final_end() -> void:
@@ -656,8 +683,80 @@ func _enter_final_end() -> void:
 	game_over_reason_key = "reason.world_end"
 	_log(Loc.t("log.world_end"))
 	phase = Phase.GAME_OVER
-	game_over.emit(game_over_reason_key)
+	_publish_resolution()
+
+
+func _begin_resolution(action: String, runtime: Dictionary) -> void:
+	phase = Phase.RESOLVE
+	_pending_resolution = {
+		"action": action,
+		"card_id": int(runtime.get("card_id", -1)),
+		"orientation": str(runtime.get("orientation", "")),
+		"slot": selected_slot if not runtime.is_empty() else -1,
+		"stats_before": stats.duplicate(),
+		"stat_changes": [],
+		"effects": [],
+	}
+
+
+func _record_effect(card_id: int, timing: String) -> void:
+	if not _pending_resolution.is_empty():
+		_pending_resolution["effects"].append({"card_id": card_id, "timing": timing})
+
+
+func _publish_resolution() -> void:
+	_publishing_resolution = true
+	if not _pending_resolution.is_empty():
+		var result := _pending_resolution
+		_pending_resolution = {}
+		result["previous_revision"] = revision
+		revision += 1
+		result["state"] = rules_context()
+		turn_resolved.emit(result)
+	if phase == Phase.GAME_OVER:
+		game_over.emit(game_over_reason_key)
 	_emit_state()
+	checkpoint_reached.emit()
+	_publishing_resolution = false
+
+
+func rules_context() -> Dictionary:
+	var options: Array[Dictionary] = []
+	if phase == Phase.SELECT:
+		for slot in field_cards.size():
+			var runtime := _runtime_at(slot)
+			if runtime.is_empty():
+				continue
+			var card_id := int(runtime["card_id"])
+			var orientation := str(runtime["orientation"])
+			var data := CardDatabase.orientation_data(card_id, orientation.to_lower())
+			options.append({
+				"slot": slot, "card_id": card_id, "orientation": orientation,
+				"accept": data.get("accept", []), "refuse": data.get("refuse", []),
+			})
+	return {
+		"revision": revision, "choices_completed": choices_completed, "choice_limit": choice_limit,
+		"stats": stats, "die_value": die_value, "marks": marks,
+		"options": options, "terminal": phase == Phase.GAME_OVER,
+		"won": game_over_won, "reason": game_over_reason_key,
+	}.duplicate(true)
+
+
+func capture_checkpoint() -> Dictionary:
+	var state := {"rng_state": rng.state}
+	for key: String in CHECKPOINT_FIELDS:
+		state[key] = get(key)
+	return state.duplicate(true)
+
+
+func restore_checkpoint(state: Dictionary) -> void:
+	var restored := state.duplicate(true)
+	for key: String in CHECKPOINT_FIELDS:
+		set(key, restored[key])
+	rng.seed = rng_seed
+	rng.state = int(restored["rng_state"])
+	debug_forced_rolls.clear()
+	_checking_once = false
 
 
 func get_mark_remaining(mark: Dictionary) -> String:

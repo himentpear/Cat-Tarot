@@ -1,7 +1,7 @@
 <h1 align="center">Cat-Tarot</h1>
 
 <p align="center">
-  <img alt="Godot 4.6" src="https://img.shields.io/badge/Godot-4.6-478cbf?logo=godotengine&logoColor=white">
+  <img alt="Godot 4.7" src="https://img.shields.io/badge/Godot-4.7-478cbf?logo=godotengine&logoColor=white">
   <img alt="GDScript" src="https://img.shields.io/badge/GDScript-4.x-355570?logo=godotengine&logoColor=white">
   <img alt="Platforms" src="https://img.shields.io/badge/platforms-Linux%20%7C%20macOS%20%7C%20Windows-lightgrey">
   <img alt="Status" src="https://img.shields.io/badge/status-complete%20prototype-brightgreen">
@@ -14,12 +14,12 @@
 
 ![Gameplay screenshot](docs/screenshot.png)
 
-A single-player 3D tarot roguelike built with Godot 4.6. Rules, controls and balance are in
+A single-player 3D tarot roguelike built with Godot 4.7. Rules, controls and balance are in
 [`docs/GAMEPLAY.md`](docs/GAMEPLAY.md).
 
 ## Requirements
 
-- Godot **4.6** (`godot` on `PATH`)
+- Godot **4.7** (`godot` on `PATH`)
 - Python **3.8+** (asset tooling)
 - `gh` CLI (only to publish assets / fetch private releases)
 
@@ -42,6 +42,9 @@ powershell -File tools\fetch-assets.ps1     # Windows PowerShell
 It uses a local bundle if present, otherwise downloads from the release, extracts to `assets/`, and
 verifies against the committed `assets.sha256`.
 
+If you extract the archive by hand (the two bullets above), verify afterwards with
+`tools/check-assets.sh`.
+
 ## Run and Tests
 
 Import assets once after fetching them, then run:
@@ -53,12 +56,18 @@ godot --path .
 
 Debug seed: `godot --path . -- --seed=1234`.
 
+If you pull new assets or scripts and see `No loader found` / `Identifier "..." not declared`,
+clear the cache and re-import: `rm -rf .godot && godot --headless --path . --import`.
+
 Tests:
 
 ```bash
 godot --headless --path . res://tests/rules_test.tscn
 godot --headless --path . res://tests/ui_smoke.tscn
 godot --headless --path . res://tests/interactions_test.tscn
+godot --headless --path . res://tests/theatre_test.tscn
+godot --headless --path . res://tests/narrative_test.tscn
+godot --headless --path . res://tests/agent_api_test.tscn
 ```
 
 ## Project layout
@@ -102,4 +111,6 @@ Never commit `assets/`, `assets.tar.gz` or `assets.zip`. No Git LFS. Every scrip
 
 - Read `AGENTS.md` first; it is identical in every game repo of this workspace.
 - Keep the PR title in Conventional Commits form and follow `.github/pull_request_template.md`.
+- If your PR changes assets and you lack write access to this repo, publish the bundle to **your
+  fork's** Release tagged `assets` and link it in the PR; the maintainer re-publishes it here.
 - AI-assisted forks/PRs are welcome under the same conventions.

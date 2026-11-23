@@ -41,6 +41,83 @@ Debug seed:
 godot --path . -- --seed=1234
 ```
 
+To try the narrative prototype, launch with a question and start a new play from a ticket.
+
+```bash
+godot --path . -- "--question=What should I do next?"
+```
+
+Selecting a card shows its story preview. Accepting or refusing plays the chosen
+scene while the next set of branches is prepared. The local prototype uses
+scripted lines and stage cues. The book resumes the question, the choices already
+made, and any scene or ending that still needs to play. Use **Close the script**
+to finish an ending.
+
+The opening introduces the setting, characters, and the detail they will return
+to later. Select **Continue** to advance once you have read it. After each
+choice, the narrator describes what happens in the scene. The result below
+shows the card, settled stat changes, and any actual mark effects.
+
+A new play with an opening question has five acts. Each act presents three
+candidates. Only the card resolved by accepting or refusing becomes part of
+the story. Rerolls change the options and their costs. They do not advance the
+act. Crossing a stat boundary can end the story early. After a surviving fifth
+choice, The World announces the answer without offering another choice.
+
+| Act | Agent skill |
+| --- | --- |
+| Opening | Turn the question into a scene, a desire, and one detail to bring back later. |
+| Complication | Put an obstacle in the chosen path and give each response a distinct cost. |
+| Turning point | Reinterpret an established detail and make a different approach possible. |
+| Climax | Test the original desire against the cost of seeing it through. |
+| Resolution | Show the consequence of the fifth choice and recall an earlier detail. The finale answers the opening question from the selected history. |
+
+The game sets the act, candidates, legal cues, and outcome. The Agent receives
+the current writing brief and the selected history along with the rules
+snapshot. Classic plays and existing saves keep their original length.
+
+### Agent API
+
+Open **Theatre settings → Agent console**. Pick a protocol and fill in its base
+URL and model ID. The default URLs point to the public services, and a compatible
+gateway can supply its own URL. Include the version prefix when the endpoint
+requires one. For New API and other OpenAI-compatible gateways, use the gateway
+address with `/v1`. A bare host defaults to `/v1/chat/completions`, and a full
+`/chat/completions` URL is used as entered. Include any reverse proxy path prefix
+in the URL. The game appends `/messages` for Anthropic and
+`/models/{model}:generateContent` for Gemini.
+
+Enter a key or leave the field blank to use the corresponding `OPENAI_API_KEY`,
+`ANTHROPIC_API_KEY`, or `GEMINI_API_KEY` environment variable. Entered keys stay
+in memory for the session by default. The optional **Remember key** setting
+stores them in plaintext in the local `user://agent_api.cfg` file.
+
+**Send test request** uses the form as entered and validates a sample from
+any of the five acts or the finale. The console shows the JSON payload, the response, the HTTP
+status, and the elapsed time. Enable the Agent and save to use the selected
+profile in play. Starting a new play then prompts for a question.
+The configured endpoint receives the question and the story and rule context
+required for the scene. Gameplay has a local fallback for unavailable or
+invalid responses.
+
+After the studio splash, the theatre opens. Click either ticket to start a play.
+The leather book resumes the last play, including a pending hand replacement.
+Starting from a ticket with a saved play asks before replacing it. Press
+`Esc` at the table to return to the theatre. Choices and rolls save as soon
+as their rules finish, including while their visual animation is playing.
+
+Hover over the wooden chest to open the lid and reveal a fan of cards above the
+deck. Click the chest to browse the 22 cards. The chest stays open and presents
+the selected card. Use Previous, Next, or the arrow keys to turn cards. A card
+joins the gallery the first time it appears in the field. The World joins at
+the final reveal.
+The left, red fader controls music and the right, brown fader controls effects.
+Drag either grip or click its slot to set a level. The two percentage readouts
+and the gears respond immediately. Tab and the arrow keys also adjust the
+levels through the controls below the console. The desk bell opens the exit
+confirmation. Arrow keys or Tab focus menu props, Enter activates them, and
+Esc returns from a panel. Gallery and sound preferences carry between plays.
+
 The tabletop restart button starts a new random run. `R` restarts with the
 command-line seed.
 
@@ -56,8 +133,8 @@ All four stats start at **4**. The safe range is **1-9**. If any stat becomes
 
 The top bar contains only the cat avatar and the four stats, each with a value
 and a small bar. Values near a boundary are highlighted. There is no progress
-counter, phase label, or language toggle. A `-1` effect is applied as a
-minus-one delta; it is not a `< 1` condition and is not clamped to a minimum of 1.
+counter, phase label, or language toggle. Negative stat deltas are displayed as `- 1`
+(minus-one delta) and are never clamped to a minimum of 1.
 
 Die-face costs:
 
@@ -77,7 +154,7 @@ Die-face costs:
   accepting/refusing.
 - Click the 3D die in the bottom-right to roll. There is no roll button and no
   need to select a card first. Each face has its own tradeoff: one stat `+1` and
-  one stat `-1`. The current face's two colored stat icons (`+ 1` / `< 1`) are
+  one stat `-1`. The current face's two colored stat icons (`+ 1` / `- 1`) are
   rendered as a large flat label on the table directly centered above the die,
   as part of it. The die result applies to every field card at once.
 - Every field card is always UPRIGHT or REVERSED, including cards that are not
@@ -90,7 +167,7 @@ Die-face costs:
   effect previews sit just below the card surface and move with it. Hovering
   tints the tick green or the cross red, with no hover text. The effect text is
   slightly larger than the mark description, uses colored stat icons, and writes
-  signed values with a space (`+ 1` / `< 1`).
+  signed values with a space (`+ 1` / `- 1`).
 - The tick applies the selected card's accept row, then checks death and gains
   the mark. The cross applies its refuse row, checks death, and gives no mark.
 - Marks are shown as a large, upright 3D card fan along the bottom edge. The
@@ -100,7 +177,7 @@ Die-face costs:
   mouse tooltip, and there is no in-game log. Hovering a hand card shows its
   effect text at the top, just like a table card.
 - Each table card writes its mark effect at the top of the card, with stat words
-  replaced by their colored icons and signed values spaced as `+ 1` / `< 1`;
+  replaced by their colored icons and signed values spaced as `+ 1` / `- 1`;
   hand cards stay clean until hovered.
 
 ## Linear 21-choice flow
@@ -127,9 +204,9 @@ opening cards already show the orientations for that face.
 
 ### Death
 
-If any stat reaches `<= 0` or `>= 10`, the run ends immediately. There is no
-inheritance, no stat reset, and no mark loss. No end panel appears; the restart
-button on the table lights up with a pulsing halo instead.
+If any stat reaches `<= 0` or `>= 10`, the run ends immediately with the current
+stats and marks. The restart button lights up with a pulsing halo. A narrative
+play also shows a short ending.
 
 The d6/pip rolls are seeded. The final-trial missing-mark rule is intentionally
 skipped in this build.
@@ -174,10 +251,9 @@ because the final trial is currently skipped.
 ## Final World
 
 After 21 choices, The World card is drawn from the deck with the normal draw and
-entry animation; once it leaves the pile, the draw pile disappears. The run then
-ends directly. This is an intentional simplification: the final interpretation /
-Judgement check / missing mark payment is not executed in this build. No end
-panel appears; the tabletop restart button lights up with a pulsing halo.
+entry animation, and the draw pile disappears. The tabletop restart button
+lights up with a pulsing halo. In a narrative play, the ending addresses the
+opening question before the player can close the script.
 
 ## Assets and icons
 
@@ -185,7 +261,12 @@ panel appears; the tabletop restart button lights up with a pulsing halo.
   file names preserved. The original 1664x2880 PNGs are archived outside git in
   the `assets-source-v1` GitHub Release.
 - Icons are from the supplied `no-padding` pack in `assets/icons/`.
-- The Chinese UI font is `assets/fonts/lemi_zhixia_qianfeng.ttf`.
+- The UI and 3D label typography use a tiered handwriting stack managed by
+  `scripts/ui_fonts.gd`: `assets/fonts/yozai_latin_symbols.ttf` (Tier 1 Latin,
+  digits, `-`, `→`, math symbols; SIL OFL 1.1 subset),
+  `assets/fonts/lemi_zhixia_qianfeng.ttf` (Tier 2 primary Chinese characters and
+  punctuation), and `assets/fonts/yozai_regular.ttf` (Tier 3 full Yozai CJK and
+  symbol fallback, SIL OFL 1.1).
 - The 3D die is exported from the supplied `DiceLowPoly.blend` to
   `assets/models/dice_low_poly.glb`.
 - Card and dice sounds are under `assets/audio/sfx/`, converted from the supplied
@@ -250,7 +331,7 @@ Cat-Tarot/
 |-- assets/
 |   |-- cards/                 optimized WebP card art
 |   |-- icons/                 supplied no-padding icons
-|   |-- fonts/                 cute Chinese UI font
+|   |-- fonts/                 tiered Lemi + Yozai handwriting fonts and OFL license
 |   |-- models/                GLB die + original blend source
 |   |-- audio/
 |   |   |-- sfx/               card, deck, and dice WAV effects
@@ -269,6 +350,7 @@ Cat-Tarot/
 |   |-- card_3d.gd             texture, hover, selection, reversal, effect/action overlays
 |   |-- dice_3d.gd             d6 face and tumble animation
 |   |-- deck_3d.gd             stacking, height, and drawn-card positions
+|   |-- ui_fonts.gd            tiered font fallback stack and typographic scale
 |   |-- ui_manager.gd          cat avatar + four-stat HUD
 |   |-- restart_button_3d.gd   tabletop restart button and game-over halo
 |   |-- audio_manager.gd       Music/SFX buses, one-shot pool, looping BGM
@@ -320,7 +402,9 @@ Test coverage includes:
 - A card's highest/lowest condition uses fixed stat order for ties.
 - Strength reversed's once-per-run low-stat boost targets the lowest stat with the
   same fixed tie order.
-- No save/load or export preset is included.
+- The theatre keeps one active play in the local player profile. A narrative
+  ending remains available in the book until the player closes the script.
+  The project has no export preset.
 - The card art keeps its printed English titles; localized names are used in the
   remaining UI text.
 - Source card filenames are preserved as supplied, including spaces.
